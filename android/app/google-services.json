@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "124526456585",
+    "project_id": "speedit-rider-android-alt",
+    "storage_bucket": "speedit-rider-android-alt.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:124526456585:android:4c655a239a5db78d656dd8",
+        "android_client_info": {
+          "package_name": "com.speeditrider"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-WqCTVRTlzoLC9UpuYYz0ba_2qYSkCpc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,48 +1,67 @@
 import UIKit
 import React
 import React_RCTAppDelegate
-import ReactAppDependencyProvider
+import FirebaseCore
+// Import FirebaseMessaging only when enabling push notifications
+// import FirebaseMessaging
+// import UserNotifications
 
-@main
-class AppDelegate: UIResponder, UIApplicationDelegate {
-  var window: UIWindow?
-
-  var reactNativeDelegate: ReactNativeDelegate?
-  var reactNativeFactory: RCTReactNativeFactory?
-
-  func application(
+@UIApplicationMain
+class AppDelegate: RCTAppDelegate {
+  override func application(
     _ application: UIApplication,
-    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    let delegate = ReactNativeDelegate()
-    let factory = RCTReactNativeFactory(delegate: delegate)
-    delegate.dependencyProvider = RCTAppDependencyProvider()
+    // Initialize Firebase
+    FirebaseApp.configure()
 
-    reactNativeDelegate = delegate
-    reactNativeFactory = factory
+    // TODO: Uncomment the following block when upgrading to a paid Apple Developer account to enable push notifications
+    /*
+    // Request push notification permissions
+    UNUserNotificationCenter.current().delegate = self
+    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+      if let error = error {
+        print("Failed to request authorization: \(error)")
+      }
+    }
+    application.registerForRemoteNotifications()
 
-    window = UIWindow(frame: UIScreen.main.bounds)
+    // Set Firebase Messaging delegate
+    Messaging.messaging().delegate = self
+    */
 
-    factory.startReactNative(
-      withModuleName: "speeditrider",
-      in: window,
-      launchOptions: launchOptions
-    )
+    // Configure React Native
+    self.moduleName = "speeditride" // Set the module name for your app
+    self.initialProps = [:] // Set initial props if needed
 
-    return true
+    // Initialize React Native using RCTAppDelegate
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
-}
 
-class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
-  override func sourceURL(for bridge: RCTBridge) -> URL? {
-    self.bundleURL()
+  // Implement bundleURL to specify the JavaScript bundle location
+  var bundleURL: URL! {
+    get {
+      #if DEBUG
+      return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
+      #else
+      return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+      #endif
+    }
   }
 
-  override func bundleURL() -> URL? {
-#if DEBUG
-    RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
-#else
-    Bundle.main.url(forResource: "main", withExtension: "jsbundle")
-#endif
+  // TODO: Uncomment the following methods when upgrading to a paid Apple Developer account to handle push notifications
+  /*
+  override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    Messaging.messaging().setAPNSToken(deviceToken, type: .unknown)
+    print("APNs token: \(deviceToken.map { String(format: "%02.2hhx", $0) }.joined())")
   }
+
+  override func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+    print("Failed to register for remote notifications: \(error)")
+  }
+
+  func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+    print("FCM token: \(fcmToken ?? "nil")")
+  }
+  */
 }

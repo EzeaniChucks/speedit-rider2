@@ -8,6 +8,9 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
+# Fix for FirebaseCoreInternal / GoogleUtilities issue
+$RNFirebaseAsStaticFrameworks = false
+
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
@@ -15,6 +18,7 @@ if linkage != nil
 end
 
 target 'speeditrider' do
+  ENV['RCT_DISABLE_FOLLY_COROUTINES'] = '1'
   config = use_native_modules!
 
   use_react_native!(
@@ -22,6 +26,30 @@ target 'speeditrider' do
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+
+  # 👇 Fix: Modular headers for Firebase
+  pre_install do |installer|
+    installer.pod_targets.each do |pod|
+      # TODO: Uncomment 'FirebaseMessaging' in the array below when upgrading to a paid Apple Developer account to enable push notifications
+      if ['GoogleUtilities', 'FirebaseCoreInternal', 'FirebaseCore'
+        #, 'FirebaseMessaging'
+      ].include?(pod.name)
+        def pod.build_type
+          Pod::BuildType.static_library
+        end
+        pod.target_definitions.each do |definition|
+          definition.store_pod('GoogleUtilities', :modular_headers => true)
+          definition.store_pod('FirebaseCoreInternal', :modular_headers => true)
+          definition.store_pod('FirebaseCore', :modular_headers => true)
+          # TODO: Uncomment the line below when upgrading to a paid Apple Developer account
+          # definition.store_pod('FirebaseMessaging', :modular_headers => true)
+        end
+      end
+    end
+  end
+
+  # TODO: Uncomment the line below when upgrading to a paid Apple Developer account to enable push notifications
+  # pod 'Firebase/Messaging'
 
   post_install do |installer|
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202

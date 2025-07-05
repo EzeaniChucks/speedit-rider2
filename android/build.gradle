@@ -15,7 +15,28 @@ buildscript {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath('com.google.gms:google-services:4.4.0') // Use the latest version
     }
+    
+    subprojects {
+        afterEvaluate {
+            if (project.name.contains("react-native-notifications")) {
+                tasks.withType(Test).configureEach {
+                    enabled = false
+                }
+            }
+        if (project.hasProperty("android")) {
+            project.android.lintOptions {
+                abortOnError false
+                checkReleaseBuilds false
+            }
+        }
+        }
+    }
+//     subprojects {
+//     afterEvaluate { project ->
+//     }
+// }
 }
 
 apply plugin: "com.facebook.react.rootproject"

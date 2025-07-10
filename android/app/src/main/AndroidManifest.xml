@@ -48,9 +48,9 @@ xmlns:tools="http://schemas.android.com/tools"
             tools:replace="android:value"/>
         
         <!-- Google Maps API Key -->
-        <meta-data
+        <!-- <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBLTJK9-A_fpEL7Xtx39kEAU8PxiSkwfAo" />
+            android:value="AIzaSyBLTJK9-A_fpEL7Xtx39kEAU8PxiSkwfAo" /> -->
       
         <!-- (Optional) AdMob if used -->
         <meta-data

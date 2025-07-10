@@ -25,6 +25,8 @@ const WithdrawalScreen = () => {
   const [bankCode, setBankCode] = useState('');
   const [accountName, setAccountName] = useState('');
   const [banks, setBanks] = useState<any[]>([]);
+  const [filteredBanks, setFilteredBanks] = useState<any[]>([]);
+  const [bankSearchQuery, setBankSearchQuery] = useState('');
   const [isLoadingBanks, setIsLoadingBanks] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,7 +40,9 @@ const WithdrawalScreen = () => {
       try {
         const response = await axiosInstance.get('/payments/banks/list');
         if (response.data.success) {
-          setBanks(response.data.data.data);
+          const banksData = response.data.data.data;
+          setBanks(banksData);
+          setFilteredBanks(banksData); // Initialize filtered banks with all banks
         }
       } catch (error) {
         Alert.alert('Error', 'Failed to load banks. Please try again.');
@@ -49,6 +53,18 @@ const WithdrawalScreen = () => {
 
     fetchBanks();
   }, []);
+
+  // Filter banks based on search query
+  useEffect(() => {
+    if (bankSearchQuery) {
+      const filtered = banks.filter(bank =>
+        bank.name.toLowerCase().includes(bankSearchQuery.toLowerCase()),
+      );
+      setFilteredBanks(filtered);
+    } else {
+      setFilteredBanks(banks);
+    }
+  }, [bankSearchQuery, banks]);
 
   const handleGoBack = () => navigation.goBack();
 
@@ -73,10 +89,6 @@ const WithdrawalScreen = () => {
 
       if (response.data.success) {
         setAccountName(response.data.data.data.account_name);
-        // Alert.alert(
-        //   'Account Verified',
-        //   `Account Name: ${response.data.data.data.account_name}`,
-        // );
       }
     } catch (error) {
       Alert.alert(
@@ -114,16 +126,15 @@ const WithdrawalScreen = () => {
       );
 
       if (response.data.success) {
-        // console.log('response from withdrawal', response.data);
         if (response.data.data.requiresOtp) {
-          navigation.navigate('WithdrawalOTP', {
+          navigation.replace('WithdrawalOTP', {
             withdrawalData: {
               reference: response.data.data.transferReference,
               amount,
               accountName,
               bankName: selectedBank?.name || '',
               entityType: 'rider',
-              phoneNumber: user.phoneNumber,
+              phoneNumber: user.phone,
             },
           });
         } else {
@@ -135,7 +146,6 @@ const WithdrawalScreen = () => {
         }
       }
     } catch (error: any) {
-      // console.log(error.response, error.message);
       Alert.alert(
         'Withdrawal Failed',
         error.response.data.error ||
@@ -152,6 +162,7 @@ const WithdrawalScreen = () => {
     setBankCode(bank.code);
     setShowBankDropdown(false);
     setAccountName(''); // Reset account name when bank changes
+    setBankSearchQuery(''); // Clear search query after selection
   };
 
   return (
@@ -206,13 +217,37 @@ const WithdrawalScreen = () => {
 
               {showBankDropdown && (
                 <View style={styles.bankDropdownContainer}>
+                  {/* Search input for banks */}
+                  <View style={styles.bankSearchContainer}>
+                    <AntIcons
+                      name="search"
+                      size={16}
+                      color="#666"
+                      style={styles.bankSearchIcon}
+                    />
+                    <TextInput
+                      style={styles.bankSearchInput}
+                      placeholder="Search for your bank..."
+                      value={bankSearchQuery}
+                      onChangeText={setBankSearchQuery}
+                      autoFocus={showBankDropdown}
+                    />
+                    {bankSearchQuery ? (
+                      <TouchableOpacity
+                        onPress={() => setBankSearchQuery('')}
+                        style={styles.bankSearchClear}>
+                        <AntIcons name="close" size={16} color="#666" />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                  
                   <ScrollView
                     style={styles.bankDropdown}
                     nestedScrollEnabled={true}>
                     {isLoadingBanks ? (
                       <ActivityIndicator color="teal" style={styles.loader} />
-                    ) : (
-                      banks.map(bank => (
+                    ) : filteredBanks.length > 0 ? (
+                      filteredBanks.map(bank => (
                         <TouchableOpacity
                           key={bank.id}
                           style={styles.bankItem}
@@ -220,6 +255,12 @@ const WithdrawalScreen = () => {
                           <Text style={styles.bankText}>{bank.name}</Text>
                         </TouchableOpacity>
                       ))
+                    ) : (
+                      <View style={styles.noBanksFound}>
+                        <Text style={styles.noBanksFoundText}>
+                          No banks found matching your search
+                        </Text>
+                      </View>
                     )}
                   </ScrollView>
                 </View>
@@ -303,7 +344,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 20, // Add some bottom padding
+    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',
@@ -375,7 +416,28 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   bankDropdownContainer: {
-    maxHeight: 200, // Fixed height for the container
+    maxHeight: 300,
+    marginTop: 10,
+  },
+  bankSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  bankSearchIcon: {
+    marginRight: 8,
+  },
+  bankSearchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#333',
+  },
+  bankSearchClear: {
+    padding: 4,
   },
   bankDropdown: {
     borderWidth: 1,
@@ -390,6 +452,15 @@ const styles = StyleSheet.create({
   bankText: {
     fontSize: 14,
     color: '#333',
+  },
+  noBanksFound: {
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noBanksFoundText: {
+    color: '#666',
+    fontSize: 14,
   },
   loader: {
     padding: 12,

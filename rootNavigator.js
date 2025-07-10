@@ -17,13 +17,17 @@ import VehicleSelectionScreen from './screens/onboarding/VehicleSelectionScreen'
 import AccountCreatedScreen from './screens/onboarding/AccountCreatedScreen'; // Adjust the path
 import OnboardingScreen from './screens/onboarding/OnboardingScreen'; // Adjust the path as necessary
 import { setNavigator } from './NavigationService'; // Import the navigation service
-import { PaperProvider } from 'react-native-paper';
+import {
+  useTheme,
+  DefaultTheme,
+  Provider as PaperProvider,
+} from 'react-native-paper';
 import { NativeBaseProvider } from 'native-base';
 import OrderPicked from './screens/ConfirmOrder';
 import TrackCustomer from './screens/TrackCustomer';
 import DeliveryScreen from './screens/DeliveryScreen';
 import { store } from './store';
-import { Alert, Platform, PermissionsAndroid } from 'react-native';
+import { Alert, Platform, PermissionsAndroid, StatusBar } from 'react-native';
 //import { PersistGate } from 'redux-persist/integration/react'; // If using redux-persist
 import { Provider as ReduxProvider, useDispatch } from 'react-redux';
 import { setFcmToken } from './store/authSlice';
@@ -57,13 +61,12 @@ const Stack = createStackNavigator();
 const RootNavigation = () => {
   // Move Firebase initialization to index.js or App.js to avoid redundancy
   // If you must initialize here, wrap it in a check to avoid multiple initializations
-  
+
   useEffect(() => {
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
   }, []);
-  
 
   // Component to handle FCM setup
   const FcmHandler = () => {
@@ -83,17 +86,22 @@ const RootNavigation = () => {
         });
 
         // 3. Listen for foreground messages
-        const unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
-          // console.log('FCM Message Received in Foreground:', JSON.stringify(remoteMessage));
-          Alert.alert(
-            remoteMessage.notification?.title || 'New Message',
-            remoteMessage.notification?.body || 'You have a new message.',
-          );
-        });
+        const unsubscribeOnMessage = messaging().onMessage(
+          async remoteMessage => {
+            // console.log('FCM Message Received in Foreground:', JSON.stringify(remoteMessage));
+            Alert.alert(
+              remoteMessage.notification?.title || 'New Message',
+              remoteMessage.notification?.body || 'You have a new message.',
+            );
+          },
+        );
 
         // 4. Handle notification press when app is in background
         messaging().onNotificationOpenedApp(remoteMessage => {
-          console.log('Notification caused app to open from background:', remoteMessage);
+          console.log(
+            'Notification caused app to open from background:',
+            remoteMessage,
+          );
           // Navigate to a specific screen based on remoteMessage.data
         });
 
@@ -102,7 +110,10 @@ const RootNavigation = () => {
           .getInitialNotification()
           .then(remoteMessage => {
             if (remoteMessage) {
-              console.log('Notification caused app to open from quit state:', remoteMessage);
+              console.log(
+                'Notification caused app to open from quit state:',
+                remoteMessage,
+              );
               // Navigate to a specific screen based on remoteMessage.data
             }
           });
@@ -162,18 +173,36 @@ const RootNavigation = () => {
     return null; // This component doesn't render anything visible
   };
 
+  // Add this custom theme configuration at the top of your file
+  const customTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      text: '#000000', // Black text for better contrast
+      primary: '#FFAB40', // Your primary color
+      placeholder: '#666666', // Darker placeholder text
+      background: '#FFFFFF', // White background
+      surface: '#FFFFFF', // White surface for components
+    },
+    roundness: 8, // Consistent with your design
+  };
+
   return (
     <ReduxProvider store={store}>
       <NativeBaseProvider>
-        <PaperProvider>
+        <PaperProvider theme={customTheme}>
           <FcmHandler />
+          <StatusBar
+            backgroundColor="#008080" // Teal
+            barStyle="light-content" // or 'dark-content'
+          />
           <NavigationContainer ref={setNavigator}>
             <Stack.Navigator
               screenOptions={{
                 headerShown: false,
               }}
-              // initialRouteName="Splash"
-              initialRouteName="Login"
+              initialRouteName="Splash"
+              // initialRouteName="Login"
             >
               {/* Changed initial route */}
               {/* Splash Screen - First screen users see */}

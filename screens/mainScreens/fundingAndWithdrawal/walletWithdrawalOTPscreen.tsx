@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,13 @@ import {
   Platform,
 } from 'react-native';
 import AntIcons from '@react-native-vector-icons/ant-design';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import axiosInstance from '../../../store/instance';
 
 const WithdrawalOTPScreen = () => {
   const navigation: any = useNavigation();
   const route = useRoute();
-  const {withdrawalData} = route.params as any; // Pass all withdrawal data
+  const { withdrawalData } = route.params as any; // Pass all withdrawal data
 
   const [otp, setOtp] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,15 +51,22 @@ const WithdrawalOTPScreen = () => {
         },
       );
 
-      if (response.data.success) {
-        navigation.navigate('WithdrawalSuccess', {
+      // console.log('funding otp finalization result:', response);
+
+      if (response.data.data.success) {
+        setOtp('');
+        navigation.replace('WithdrawalSuccess', {
           amount: withdrawalData.amount,
           accountName: withdrawalData.accountName,
           bankName: withdrawalData.bankName,
         });
       }
     } catch (error: any) {
-      // console.log(error.message, error.response);
+      // console.log(
+      //   'funding finalization error message:',
+      //   error.message,
+      //   error.response,
+      // );
       Alert.alert(
         'Error',
         error?.response?.data?.error ||
@@ -79,12 +86,14 @@ const WithdrawalOTPScreen = () => {
         reference: withdrawalData.reference,
       });
 
+      // console.log('otp resend:', response);
+
       Alert.alert(
         'OTP Resent',
-        // response.data.data.message || 'A new OTP has been sent to your phone',
+        response.data.data.message || 'A new OTP has been sent to your phone',
       );
     } catch (error: any) {
-      console.log(error.response?.data?.error, error?.message),
+      // console.log(error.response?.data?.error, error?.message),
         Alert.alert('Error', 'Failed to resend OTP');
     }
   };
@@ -93,19 +102,20 @@ const WithdrawalOTPScreen = () => {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.flex}>
+        style={styles.flex}
+      >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <AntIcons name="left" size={24} color="teal" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>OTP Verification</Text>
-          <View style={{width: 24}} /> {/* Spacer */}
+          <View style={{ width: 24 }} /> {/* Spacer */}
         </View>
 
         <View style={styles.content}>
           <Text style={styles.title}>Enter OTP</Text>
           <Text style={styles.subtitle}>
-            We sent a 6-digit code to your phone number ending with
+            We sent a 6-digit code to your phone number ending with{' *******'}
             {withdrawalData.phoneNumber?.slice(-4) || '****'}
           </Text>
 
@@ -124,7 +134,8 @@ const WithdrawalOTPScreen = () => {
               (otp.length !== 6 || isSubmitting) && styles.disabledButton,
             ]}
             onPress={handleSubmit}
-            disabled={otp.length !== 6 || isSubmitting}>
+            disabled={otp.length !== 6 || isSubmitting}
+          >
             {isSubmitting ? (
               <ActivityIndicator color="#fff" />
             ) : (

@@ -10,11 +10,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Icon from '@react-native-vector-icons/ionicons';
-import {useGetWalletTransactionsQuery} from '../store/ordersApi';
-import {formatDate} from '../util/date';
+import { useGetWalletTransactionsQuery } from '../store/ordersApi';
+import { formatDate } from '../util/date';
 import Header from '../components/header';
-import {Transaction, TransactionsResponse} from '../types/transaction.types';
-import {useClipboard} from 'native-base';
+import { Transaction, TransactionsResponse } from '../types/transaction.types';
+import { useClipboard } from 'native-base';
 
 const Ionicons = Icon as any;
 
@@ -24,10 +24,10 @@ const TransactionHistoryScreen = () => {
     isLoading,
     isError,
     refetch,
-  } = useGetWalletTransactionsQuery({page: 1, limit: 20});
+  } = useGetWalletTransactionsQuery({ page: 1, limit: 20 });
 
   // Inside your component
-  const {onCopy, hasCopied} = useClipboard();
+  const { onCopy, hasCopied } = useClipboard();
   const [copiedReferenceId, setCopiedReferenceId] = React.useState<
     string | null
   >(null);
@@ -51,9 +51,9 @@ const TransactionHistoryScreen = () => {
     );
   };
 
-  const getTransactionColor = (status: string) => {
+  const getTransactionColor = (status: string, type?: 'debit' | 'credit') => {
     const colors: Record<string, string> = {
-      successful: '#4CAF50',
+      successful: type == 'debit' ? '#F44336' : '#4CAF50',
       failed: '#F44336',
       pending: '#FFC107',
       reversed: '#9C27B0',
@@ -71,7 +71,7 @@ const TransactionHistoryScreen = () => {
     return statusMap[status] || status;
   };
 
-  const renderTransactionItem = ({item}: {item: Transaction}) => {
+  const renderTransactionItem = ({ item }: { item: Transaction }) => {
     const handleCopy = () => {
       onCopy(item.reference);
       setCopiedReferenceId(item.id);
@@ -83,18 +83,25 @@ const TransactionHistoryScreen = () => {
         onPress={() => {
           // navigation.navigate('TransactionDetails', {transaction: item})
         }}
-        activeOpacity={0.9}>
+        activeOpacity={0.9}
+      >
         <View style={styles.transactionCard}>
           <View style={styles.transactionHeader}>
             <View
               style={[
                 styles.iconContainer,
-                {backgroundColor: `${getTransactionColor(item.status)}20`},
-              ]}>
+                {
+                  backgroundColor: `${getTransactionColor(
+                    item.status,
+                    item.type,
+                  )}20`,
+                },
+              ]}
+            >
               <Ionicons
                 name={getTransactionIcon(item.purpose, item.type)}
                 size={24}
-                color={getTransactionColor(item.status)}
+                color={getTransactionColor(item.status, item.type)}
               />
             </View>
 
@@ -112,21 +119,29 @@ const TransactionHistoryScreen = () => {
               <Text
                 style={[
                   styles.amountText,
-                  {color: getTransactionColor(item.status)},
-                ]}>
+                  { color: getTransactionColor(item.status, item.type) },
+                ]}
+              >
                 {item.type === 'credit' ? '+' : '-'}₦
                 {parseFloat(item.amount).toFixed(2)}
               </Text>
               <View
                 style={[
                   styles.statusBadge,
-                  {backgroundColor: `${getTransactionColor(item.status)}20`},
-                ]}>
+                  {
+                    backgroundColor: `${getTransactionColor(
+                      item.status,
+                      // item.type,
+                    )}20`,
+                  },
+                ]}
+              >
                 <Text
                   style={[
                     styles.statusText,
-                    {color: getTransactionColor(item.status)},
-                  ]}>
+                    { color: getTransactionColor(item.status) },
+                  ]}
+                >
                   {getStatusText(item.status)}
                 </Text>
               </View>
@@ -140,12 +155,14 @@ const TransactionHistoryScreen = () => {
                 <Text
                   style={styles.referenceValue}
                   numberOfLines={1}
-                  ellipsizeMode="tail">
+                  ellipsizeMode="tail"
+                >
                   {item.reference}
                 </Text>
                 <TouchableOpacity
                   onPress={handleCopy}
-                  style={styles.copyButton}>
+                  style={styles.copyButton}
+                >
                   <Icon
                     name={
                       copiedReferenceId === item.id
@@ -318,7 +335,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
@@ -387,7 +404,7 @@ const styles = StyleSheet.create({
   },
   referenceContainer: {
     flexDirection: 'row',
-    alignItems: "center",
+    alignItems: 'center',
     gap: 5,
     borderTopWidth: 1,
     borderTopColor: '#EEEEEE',
@@ -435,7 +452,7 @@ const styles = StyleSheet.create({
     padding: 16,
     width: '48%',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,

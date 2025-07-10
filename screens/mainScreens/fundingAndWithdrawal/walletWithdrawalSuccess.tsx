@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,16 +6,17 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Image,
+  BackHandler,
 } from 'react-native';
 import AntIcons from '@react-native-vector-icons/ant-design';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
-const WithdrawalSuccessScreen = ({route}: any) => {
+const WithdrawalSuccessScreen = ({ route }: any) => {
   const navigation: any = useNavigation();
-  const {amount, accountName, bankName} = route.params;
+  const { amount, accountName, bankName } = route.params;
 
   const handleGoHome = () => {
-    navigation.navigate('MainApp', {screen: 'Home'});
+    navigation.replace('MainApp', { screen: 'Home' });
   };
 
   const formatAmount = (value: string | number) => {
@@ -29,6 +30,19 @@ const WithdrawalSuccessScreen = ({route}: any) => {
           maximumFractionDigits: 2,
         });
   };
+
+  // In your WithdrawalSuccess and WithdrawalOTP components
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        handleGoHome();
+        return true; // Prevent default back behavior
+      },
+    );
+
+    return () => backHandler.remove(); // Clean up the event listener
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -117,7 +131,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,

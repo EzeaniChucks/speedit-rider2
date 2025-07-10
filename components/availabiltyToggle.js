@@ -1,114 +1,90 @@
-// AvailabilityToggle.js
-import React, {useEffect, useState, useRef} from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   TouchableOpacity,
   StyleSheet,
   Animated,
   ActivityIndicator,
-  Text,
   Alert,
 } from 'react-native';
-import {useSelector, useDispatch} from 'react-redux';
-import {Toast} from 'native-base'; // Assuming you still want to use NativeBase Toast
-// import { ToastSuccess } from './your-toast-components'; // Your custom toast component if any
-import {
-  fetchAvailabilityStatus,
-  updateAvailabilityStatus,
-  resetAvailabilityState,
-} from '../store/avail'; // Adjust path
+import { useSelector, useDispatch } from 'react-redux';
+import { Toast } from 'native-base';
+import { fetchAvailabilityStatus, updateAvailabilityStatus } from '../store/avail';
 
 const AvailabilityToggle = () => {
   const dispatch = useDispatch();
-  const {isAvailable, getStatus, getError, updateStatus, updateError} =
+  const { isAvailable, getStatus, getError, updateStatus, updateError } =
     useSelector(state => state.availability);
 
-  // Local state for animation, driven by Redux's isAvailable
   const [localIsEnabled, setLocalIsEnabled] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
 
   // Fetch initial status on mount
   useEffect(() => {
     const resultAction = dispatch(fetchAvailabilityStatus());
-    if (fetchAvailabilityStatus.fulfilled.match(resultAction)) {
-      setLocalIsEnabled(resultAction.payload.data.isAvailable); // Assuming the API
-    }
-    // setLocalIsEnabled()
     return () => {
-      // Optional: reset state if component unmounts and you want to clear errors/status
-      // dispatch(resetAvailabilityState());
+      // Cleanup if needed
     };
   }, [dispatch]);
 
-  // Update local state and animation when Redux state changes
+  // Update local state when Redux state changes
   useEffect(() => {
     if (getStatus === 'succeeded') {
       setLocalIsEnabled(isAvailable);
-      Animated.timing(translateX, {
-        toValue: isAvailable ? 17 : 0, // 17 when enabled (thumb moves right), 0 when disabled
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+      updateAnimation(isAvailable);
     }
-  }, [isAvailable, getStatus, translateX]);
+  }, [isAvailable, getStatus]);
 
-  // Handle API call errors
+  // Handle errors
   useEffect(() => {
     if (getStatus === 'failed' && getError) {
-      Alert.alert('Error', getError || 'Could not fetch availability status.');
+      Alert.alert('Error', getError);
     }
     if (updateStatus === 'failed' && updateError) {
-      Alert.alert(
-        'Error',
-        updateError || 'Could not update availability status.',
-      );
-      // Revert optimistic update if you had one, by re-fetching or setting localIsEnabled
-      setLocalIsEnabled(isAvailable); // Revert to last known good state from Redux
+      Alert.alert('Error', updateError);
+      // Revert to last known good state
+      setLocalIsEnabled(isAvailable);
+      updateAnimation(isAvailable);
+    }
+  }, [getStatus, getError, updateStatus, updateError, isAvailable]);
+
+  // Animation helper
+  const updateAnimation = useCallback(
+    enabled => {
       Animated.timing(translateX, {
-        toValue: isAvailable ? 17 : 0,
+        toValue: enabled ? 17 : 0,
         duration: 200,
         useNativeDriver: true,
       }).start();
-    }
-  }, [getStatus, getError, updateStatus, updateError, isAvailable, translateX]);
+    },
+    [translateX],
+  );
 
-  // Handle successful update (e.g., show toast)
+  // Handle successful update
   useEffect(() => {
     if (updateStatus === 'succeeded') {
-      // The API call in your original component was for notifications,
-      // this new API is for availability. Adjust toast message accordingly.
       const message = localIsEnabled
         ? 'You are now marked as available!'
         : 'You are now marked as unavailable.';
-      // Toast.show({
-      //   description: message,
-      //   duration: 3000,
-      //   // render: () => {return <ToastSuccess  title='Status Updated' status={'success'}  message={message} /> }
-      // });
+      Toast.show({ description: message, duration: 3000 });
     }
   }, [updateStatus, localIsEnabled]);
 
-  const toggleSwitch = () => {
-    if (updateStatus === 'loading' || getStatus === 'loading') {
-      return; // Prevent multiple quick toggles while an operation is in progress
-    }
+  // Toggle function - ONLY place where dispatch happens
+  const toggleSwitch = useCallback(() => {
+    if (updateStatus === 'loading' || getStatus === 'loading') return;
 
-    const newApiStatus = !localIsEnabled; // The status we want to send to the API
+    const newApiStatus = !localIsEnabled;
 
-    // Optimistically update UI (optional, but can make it feel snappier)
-    // The useEffect for [isAvailable] will correct this if API fails and state reverts.
+    // Optimistic UI update
     setLocalIsEnabled(newApiStatus);
-    Animated.timing(translateX, {
-      toValue: newApiStatus ? 17 : 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
+    updateAnimation(newApiStatus);
 
+    // ONLY dispatch happens here
     dispatch(updateAvailabilityStatus(newApiStatus));
-  };
+  }, [localIsEnabled, updateStatus, getStatus, dispatch, updateAnimation]);
 
   if (getStatus === 'loading' && isAvailable === null) {
-    // Show loader only on initial load
     return (
       <View style={styles.loaderContainer}>
         <ActivityIndicator size="small" color="#513DB0" />
@@ -120,11 +96,14 @@ const AvailabilityToggle = () => {
     <TouchableOpacity
       style={styles.switchContainer}
       onPress={toggleSwitch}
-      disabled={updateStatus === 'loading'} // Disable while updating
+      disabled={updateStatus === 'loading'}
     >
       <Animated.View
-        style={[styles.track, localIsEnabled && styles.trackEnabled]}>
-        <Animated.View style={[styles.thumb, {transform: [{translateX}]}]} />
+        style={[styles.track, localIsEnabled && styles.trackEnabled]}
+      >
+        <Animated.View
+          style={[styles.thumb, { transform: [{ translateX }] }]}
+        />
       </Animated.View>
       {updateStatus === 'loading' && (
         <ActivityIndicator

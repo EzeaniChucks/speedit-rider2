@@ -239,6 +239,10 @@ const DashboardScreen = () => {
                       style={
                         item.type === 'credit'
                           ? styles.transactionCreditAmount
+                          : item.type == 'debit' &&
+                            (item.status.toLowerCase().includes('fail') ||
+                              item.status.toLowerCase().includes('pend'))
+                          ? styles.transactionPendingAmount
                           : styles.transactionDebitAmount
                       }
                     >
@@ -323,14 +327,14 @@ const styles = StyleSheet.create({
   balanceContainer: {
     backgroundColor: 'white',
     marginHorizontal: 20,
-    marginTop: 10,
+    marginTop: 25,
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowColor: 'teal',
+    // shadowOffset: { width: 2, height: 10 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 30,
+    elevation: 20,
   },
   balanceLabel: {
     fontSize: 16,
@@ -447,11 +451,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 20,
     marginTop: 20,
-    shadowColor: '#000',
+    shadowColor: 'gray',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 20,
   },
   buttonText: {
     color: 'white',
@@ -468,11 +472,11 @@ const styles = StyleSheet.create({
     marginTop: 25,
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowColor: 'gray',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.5,
     shadowRadius: 6,
-    elevation: 3,
+    elevation: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -536,6 +540,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: 'tomato',
+  },
+  transactionPendingAmount: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: 'gray',
   },
 });
 

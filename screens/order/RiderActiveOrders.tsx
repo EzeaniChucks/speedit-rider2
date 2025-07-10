@@ -18,12 +18,14 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import Geolocation from '@react-native-community/geolocation';
+// import Geolocation from 'react-native-geolocation-service';
 import UserProfileCard from '../../components/userProfileCard';
 
 const RiderActiveOrders = () => {
-  const [riderLocation, setRiderLocation] = useState(null);
+  const [riderLocation, setRiderLocation] = useState<null | number[]>(null);
   const [locationError, setLocationError] = useState('');
-  const navigation = useNavigation();
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const navigation: any = useNavigation();
 
   // This code isn't getting rider location. Also, it used to ask for exact location and approxiamate location. Now it just asks for approximate location only. It fails all the time.
   // --- LOCATION LOGIC ---
@@ -58,7 +60,7 @@ const RiderActiveOrders = () => {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) {
       setLocationError(
-        'Location permission denied. Please grant location access in your settings to find orders.',
+        'Location permission denied. Please grant location access to this app in your settings.',
       );
       Alert.alert(
         'Permission Denied',
@@ -66,27 +68,41 @@ const RiderActiveOrders = () => {
       );
       return;
     }
-
-    Geolocation.getCurrentPosition(
-      position => {
-        const { latitude, longitude } = position.coords;
-        setRiderLocation([longitude, latitude]);
-        setLocationError(null);
-      },
-      error => {
-        console.log(error);
-        setLocationError('Could not fetch location.');
-        Alert.alert(
-          'Location Error',
-          'Failed to get your current location. Please ensure GPS is enabled.',
-        );
-      },
-      { enableHighAccuracy: true, timeout: 25000, maximumAge: 10000 },
-    );
+    setLoadingLocation(true);
+    try {
+      Geolocation.getCurrentPosition(
+        position => {
+          const { latitude, longitude } = position.coords;
+          setRiderLocation([longitude, latitude]);
+          setLocationError('');
+          setLoadingLocation(false);
+        },
+        error => {
+          // console.log(error);
+          setLocationError('Could not fetch location.');
+          Alert.alert(
+            'Location Error',
+            'Failed to get your current location. Please ensure GPS is enabled. Then click the refresh button below.',
+          );
+          setLoadingLocation(false);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 50000,
+          maximumAge: 10000,
+          // forceRequestLocation: true,
+          // showLocationDialog: true,
+          // sh
+        },
+      );
+    } catch (e) {
+      console.log('Geolocation fetching Crashed', e);
+      setLoadingLocation(false);
+    }
   };
 
   const { availableOrders, notificationCount } = useSelector(
-    state => state.orders,
+    (state: any) => state.orders,
   );
 
   const {
@@ -129,9 +145,42 @@ const RiderActiveOrders = () => {
         ]}
       >
         {locationError ? (
-          <Text style={{ textAlign: 'center', color: 'red' }}>
-            {locationError}
-          </Text>
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20,
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 10,
+            }}
+          >
+            <Text style={{ textAlign: 'center', color: 'red' }}>
+              {locationError}
+            </Text>
+            <TouchableOpacity
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                gap: 10,
+                alignItems: 'center',
+                padding: 10,
+                borderRadius: 10,
+                backgroundColor: 'teal',
+              }}
+              onPress={() => getLocation()}
+              disabled={loadingLocation}
+            >
+              <Text
+                style={{
+                  color: 'white',
+                }}
+              >
+                {loadingLocation ? '...refreshing' : 'Refresh Location'}
+              </Text>
+              <Icon name="refresh" size={20} color="white" />
+            </TouchableOpacity>
+          </View>
         ) : (
           <>
             <ActivityIndicator size="large" color="teal" />
@@ -296,6 +345,9 @@ const styles = StyleSheet.create({
   },
   refreshButton: {
     padding: 8,
+  },
+  errorText: {
+    color: 'tomato',
   },
 });
 

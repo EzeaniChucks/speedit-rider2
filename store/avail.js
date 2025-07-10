@@ -1,10 +1,10 @@
-import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from './instance'; // Adjust path if needed
 
 // Thunk to fetch current availability status
 export const fetchAvailabilityStatus = createAsyncThunk(
   'availability/fetchStatus',
-  async (_, {rejectWithValue}) => {
+  async (_, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get('/riders/availability/');
       // Assuming the API returns { status: boolean } or similar
@@ -23,17 +23,18 @@ export const fetchAvailabilityStatus = createAsyncThunk(
 // Thunk to update availability status
 export const updateAvailabilityStatus = createAsyncThunk(
   'availability/updateStatus',
-  async (newStatus, {rejectWithValue}) => {
+  async (newStatus, { rejectWithValue }) => {
     // newStatus is a boolean
     try {
-      const payload = {status: newStatus};
+      const payload = { status: newStatus };
       const response = await axiosInstance.post(
         '/riders/availability/',
         payload,
       );
+      console.log('availability status success:', response);
       return response.data; // e.g., { message: "Status updated", status: true }
     } catch (error) {
-      // console.log('availability error:', error.response.data.error);
+      console.log('availability error:', error.response.data.error);
       return rejectWithValue(
         error.response?.data.error ||
           error.response?.data?.data ||
@@ -99,5 +100,5 @@ const availabilitySlice = createSlice({
   },
 });
 
-export const {resetAvailabilityState} = availabilitySlice.actions;
+export const { resetAvailabilityState } = availabilitySlice.actions;
 export default availabilitySlice.reducer;

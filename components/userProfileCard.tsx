@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     paddingTop: 10,
-    paddingBottom: 5,
+    paddingBottom: 10,
     position: 'absolute',
     top: 2,
     width: '100%',
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignItems: 'center',
     borderColor: 'teal',
-    borderWidth: 1,
+    borderWidth: 0.5,
   },
   profileImage: {
     width: 50,

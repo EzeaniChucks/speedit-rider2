@@ -7,13 +7,12 @@ import {
   TouchableOpacity,
   View,
   StyleSheet,
-  StatusBar,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 // MaterialIcons import was likely for the native-base Icon, PaperTextInput.Icon uses MaterialCommunityIcons by default for string names
 
-import AntIcons from '@react-native-vector-icons/ant-design';
+import AntIcons from 'react-native-vector-icons/AntDesign';
 import {useDispatch, useSelector} from 'react-redux';
 import {
   loginUser,
@@ -24,6 +23,18 @@ import {
 import {TextInput as PaperTextInput} from 'react-native-paper'; // Import PaperTextInput
 
 const SignInScreen = ({navigation}) => {
+  const theme = useTheme(); // Now using our custom theme
+  
+  const paperInputTheme = {
+    ...theme,
+    colors: {
+      ...theme.colors,
+      primary: '#FFAB40', // Your active color
+      text: '#000000', // Explicit black text
+      placeholder: '#666666', // Dark gray placeholder
+    },
+  };
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -106,21 +117,10 @@ const SignInScreen = ({navigation}) => {
 
   const isButtonDisabled = !email.trim() || !password.trim();
 
-  // Common theme for PaperTextInput to match button's borderRadius and control colors
-  const paperInputTheme = {
-    roundness: 8, // Matches button borderRadius
-    colors: {
-      // text: '#000', // Default text color
-      // placeholder: '#666', // Default placeholder color for outlined mode
-      // primary: 'teal', // Color for focused outline and label
-      // background: '#f0f0f0' // If you want a light background for the input field itself
-    },
-  };
   const activeOutlineColor = '#FFAB40'; // Color for the outline when focused
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle={'dark-content'} />
       <Box
         flexDirection="row"
         justifyContent="flex-start"

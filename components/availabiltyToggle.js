@@ -8,7 +8,6 @@ import {
   Alert,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { Toast } from 'native-base';
 import { fetchAvailabilityStatus, updateAvailabilityStatus } from '../store/avail';
 
 const AvailabilityToggle = () => {
@@ -66,7 +65,7 @@ const AvailabilityToggle = () => {
       const message = localIsEnabled
         ? 'You are now marked as available!'
         : 'You are now marked as unavailable.';
-      Toast.show({ description: message, duration: 3000 });
+      // Toast.show({ description: message, duration: 3000 });
     }
   }, [updateStatus, localIsEnabled]);
 

@@ -77,7 +77,7 @@ const UserProfileCard = () => {
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <AntDesign
             name="logout"
-            size={20}
+            size={12}
             color="#FFF"
             style={styles.buttonIcon}
           />
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 5,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     borderRadius: 8,
     elevation: 2,
     shadowColor: '#000',

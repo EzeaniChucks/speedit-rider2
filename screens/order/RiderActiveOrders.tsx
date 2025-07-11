@@ -120,6 +120,7 @@ const RiderActiveOrders = () => {
       : skipToken,
   );
 
+  // console.log(riderLocation);
   // // This will run whenever the screen comes into focus
   useFocusEffect(
     useCallback(() => {

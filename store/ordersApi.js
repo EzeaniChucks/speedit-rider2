@@ -65,9 +65,10 @@ export const ordersApi = createApi({
       }),
       invalidatesTags: ['AvailableOrders', 'CurrentOrder', 'Order'],
     }),
-    cancelOrder: builder.mutation({
+
+    rejectOrder: builder.mutation({
       query: ({orderId, reason}) => ({
-        url: `orders/${orderId}/cancel`,
+        url: `orders/${orderId}/reject/`,
         method: 'PATCH',
         body: reason ? {reason} : {}, // Only send reason if provided
       }),
@@ -177,7 +178,7 @@ export const {
   useGetAvailableOrdersQuery,
   // useGetOrderDetailsQuery,
   useAcceptOrderMutation,
-  useCancelOrderMutation,
+  useRejectOrderMutation,
   useGetOrderHistoryQuery,
   useGetCurrentOrderQuery,
   useUpdateOrderStatusMutation,

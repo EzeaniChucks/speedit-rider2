@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   KeyboardAvoidingView,
@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import {
   Box,
@@ -24,18 +25,26 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import {
   useAcceptOrderMutation,
   useGetOrderDetailsQuery,
+  useRejectOrderMutation,
 } from '../../store/ordersApi';
-import {useSelector} from 'react-redux';
-import {skipToken} from '@reduxjs/toolkit/query';
+import { useSelector } from 'react-redux';
+import { skipToken } from '@reduxjs/toolkit/query';
 import Ionicon from '@react-native-vector-icons/ionicons';
 import Header from '../../components/header';
 
-const OrderDetailsScreen = ({route, navigation}) => {
+const OrderDetailsScreen = ({ route, navigation }) => {
   // const toast = useToast();
-  // RTK Query mutations
-  const [acceptOrder, {isLoading: isAccepting}] = useAcceptOrderMutation();
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
 
-  const {orderId, isHistory = false} = route.params || {};
+  // RTK Query mutations
+  const [acceptOrder, { isLoading: isAccepting }] = useAcceptOrderMutation();
+  const [rejectOrder, { isLoading: isRejecting }] = useRejectOrderMutation();
+
+  const user = useSelector(state => state.auth.user);
+
+  const { orderId, isHistory = false } = route.params || {};
   // 1. Properly use the query hook and get the data
   const {
     data: apiResponse,
@@ -63,8 +72,18 @@ const OrderDetailsScreen = ({route, navigation}) => {
   // 5. Handle error state
   if (error) {
     return (
-      <Box flex={1} justifyContent="center" alignItems="center">
-        <Text>Error loading order details</Text>
+      <Box
+        flex={1}
+        justifyContent="center"
+        gap={5}
+        padding={10}
+        alignItems="center"
+      >
+        <Text>
+          {typeof error.data.error === 'string'
+            ? error.data.error
+            : 'Error loading order details'}
+        </Text>
         <Button onPress={() => refetch()}>Retry</Button>
       </Box>
     );
@@ -99,57 +118,74 @@ const OrderDetailsScreen = ({route, navigation}) => {
   };
 
   const handleAccept = async () => {
-    const result = await acceptOrder(order.id).unwrap();
-
-    // console.log('result from order accept: orderdetailsscreen:61: ', result);
-
-    // Alert
-    Alert.alert('Order Accepted', 'Order accepted successfully!', [
-      {
-        text: 'OK',
-        onPress: () => {
-          navigation.replace('OrderProgress', {
-            order: {
-              ...order,
-              acceptedAt: new Date().toISOString(),
-              status: 'accepted',
-            },
-          });
+    try {
+      const result = await acceptOrder(order.id).unwrap();
+      // Alert
+      Alert.alert('Order Accepted', 'Order accepted successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            navigation.replace('OrderProgress', {
+              order: {
+                ...order,
+                acceptedAt: new Date().toISOString(),
+                status: 'accepted',
+              },
+            });
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (err) {
+      Alert.alert(
+        'Error',
+        typeof err.data.error == 'string'
+          ? err.data.error
+          : 'Order could not be accepted. Please go back and select another order instead',
+      );
+      // console.log('error from order accept: orderdetailsscreen:61: ', err);
+    }
   };
 
-  const handleDecline = () => {
-    // Alert
-    Alert.alert(
-      'Order Declined',
-      `Order declined. Rating impact: -${order.riderRatingImpact} points`,
-      [{text: 'OK', onPress: () => navigation.navigate('RiderActiveOrders')}],
-    );
+  const handleDecline = async reason => {
+    try {
+      // console.lg("", order.id, reason, customReason)
+      const result = await rejectOrder({
+        orderId: order.id,
+        reason: reason || customReason || 'No reason provided',
+      }).unwrap();
+
+      Alert.alert(
+        'Order Declined',
+        `Order declined. Rating impact: -${order.riderRatingImpact} points`,
+        [
+          {
+            text: 'OK',
+            onPress: () =>
+              navigation.replace('MainApp', { screen: 'RiderActiveOrders' }),
+          },
+        ],
+      );
+    } catch (error) {
+      // console.log('order rejection failure:', error);
+      Alert.alert(
+        'Error',
+        typeof error.data.error === 'string'
+          ? error.data.error
+          : 'Failed to reject order. Please try again.',
+      );
+    } finally {
+      setShowRejectModal(false);
+      setRejectionReason('');
+      setCustomReason('');
+    }
   };
 
   const renderActionButtons = () => {
     if (isHistory) return null;
-
+    // console.log(order.rider.id, user.id)
     return (
       <VStack space={2} mt={4}>
-        {!order.acceptedAt ? (
-          <>
-            <Button
-              colorScheme="green"
-              leftIcon={<Icon as={Ionicons} name="checkmark-circle" />}
-              onPress={handleAccept}
-              isLoading={isAccepting}>
-              Accept Order
-            </Button>
-            <Text textAlign="center" color="gray.500" fontSize="xs">
-              Expires in{' '}
-              {Math.floor((new Date(order.expiresAt) - new Date()) / 60000)}{' '}
-              mins
-            </Text>
-          </>
-        ) : (
+        {order.rider && order.rider.id === user.id ? (
           <>
             <Button
               colorScheme="blue"
@@ -158,7 +194,8 @@ const OrderDetailsScreen = ({route, navigation}) => {
                 navigation.navigate('OrderProgress', {
                   order,
                 });
-              }}>
+              }}
+            >
               Go to Order Progress
             </Button>
             <Button
@@ -166,35 +203,151 @@ const OrderDetailsScreen = ({route, navigation}) => {
               colorScheme="orange"
               variant="solid"
               leftIcon={<Icon as={Ionicons} size={7} name="close-circle" />}
-              onPress={handleDecline}>
-              <Text style={{color: 'white'}}>
-                Cancel Delivery (- {order.riderRatingImpact} rating impact)
+              onPress={() => setShowRejectModal(true)}
+              isLoading={isRejecting}
+            >
+              <Text style={{ color: 'white' }}>
+                Reject Delivery (- {order.riderRatingImpact} rating impact)
               </Text>
             </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              colorScheme="green"
+              leftIcon={<Icon as={Ionicons} name="checkmark-circle" />}
+              onPress={handleAccept}
+              isLoading={isAccepting}
+            >
+              Accept Order
+            </Button>
+            <Text textAlign="center" color="gray.500" fontSize="xs">
+              Expires in{' '}
+              {Math.floor((new Date(order.expiresAt) - new Date()) / 60000)}{' '}
+              mins
+            </Text>
           </>
         )}
       </VStack>
     );
   };
 
+  const RejectionModal = () => (
+    <Box
+      position="absolute"
+      top={0}
+      left={0}
+      right={0}
+      bottom={0}
+      bg="rgba(0,0,0,0.5)"
+      justifyContent="center"
+      alignItems="center"
+      zIndex={999}
+    >
+      <Box bg="white" p={5} borderRadius="md" width="90%">
+        <Text fontSize="lg" fontWeight="bold" mb={4}>
+          Confirm Rejection
+        </Text>
+
+        <VStack space={0}>
+          <Text color={'tomato'} mb={3}>
+            Your rider rating will drop by -{order?.riderRatingImpact}
+          </Text>
+          <Text mb={3}>Please select a reason for rejecting this order:</Text>
+        </VStack>
+
+        <VStack space={2} mb={4}>
+          {[
+            'Too far away',
+            'Insufficient payment',
+            'Heavy items',
+            'Unsafe location',
+            'Other',
+          ].map(reason => (
+            <TouchableOpacity
+              key={reason}
+              onPress={() =>
+                setRejectionReason(reason === rejectionReason ? '' : reason)
+              }
+            >
+              <HStack space={2} alignItems="center">
+                <Icon
+                  as={Ionicons}
+                  name={
+                    rejectionReason === reason
+                      ? 'radio-button-on'
+                      : 'radio-button-off'
+                  }
+                  size={5}
+                  color="#008A63"
+                />
+                <Text>{reason}</Text>
+              </HStack>
+            </TouchableOpacity>
+          ))}
+        </VStack>
+
+        {rejectionReason === 'Other' && (
+          <Box mb={4}>
+            <Text mb={2}>Please specify:</Text>
+            <TextInput
+              placeholder="Enter reason..."
+              value={customReason}
+              onChangeText={setCustomReason}
+            />
+          </Box>
+        )}
+
+        <HStack space={3} justifyContent="flex-end">
+          <Button
+            variant="ghost"
+            onPress={() => {
+              setShowRejectModal(false);
+              setRejectionReason('');
+              setCustomReason('');
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            colorScheme="red"
+            isDisabled={
+              !rejectionReason || (rejectionReason === 'Other' && !customReason)
+            }
+            isLoading={isRejecting}
+            onPress={() =>
+              handleDecline(
+                rejectionReason === 'Other' ? customReason : rejectionReason,
+              )
+            }
+          >
+            Confirm Reject
+          </Button>
+        </HStack>
+      </Box>
+    </Box>
+  );
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
       <Header title="Order Details" />
       {/* Scrollable Content */}
       <ScrollView
         flex={1}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         <Box p={4} mt={3}>
           <VStack space={4}>
-            <HStack space={7} style={{justifyContent: 'space-between'}}>
+            <HStack space={7} style={{ justifyContent: 'space-between' }}>
               {/* Order Status */}
               <Badge
                 colorScheme={order.acceptedAt ? 'success' : 'warning'}
-                alignSelf="flex-start">
+                alignSelf="flex-start"
+              >
                 {order?.status?.toUpperCase()?.split('_').join(' ')}
               </Badge>
               <HStack space={2}>
@@ -282,6 +435,9 @@ const OrderDetailsScreen = ({route, navigation}) => {
           </VStack>
         </Box>
       </ScrollView>
+
+      {/* Add this at the end of your KeyboardAvoidingView */}
+      {showRejectModal && <RejectionModal />}
     </KeyboardAvoidingView>
   );
 };
@@ -313,9 +469,9 @@ const styles = StyleSheet.create({
 export default OrderDetailsScreen;
 
 // Reusable Location Component
-export const LocationSection = ({title, address, name, phone, coords}) => {
+export const LocationSection = ({ title, address, name, phone, coords }) => {
   const handleGetDirections = coords => {
-    const {latitude, longitude} = coords;
+    const { latitude, longitude } = coords;
 
     if (Platform.OS === 'ios') {
       // Try Apple Maps first
@@ -354,7 +510,8 @@ export const LocationSection = ({title, address, name, phone, coords}) => {
             variant="outline"
             leftIcon={<Icon as={Ionicons} name="navigate" />}
             onPress={() => handleGetDirections(coords)}
-            flex={1}>
+            flex={1}
+          >
             Directions
           </Button>
           <Button
@@ -363,7 +520,8 @@ export const LocationSection = ({title, address, name, phone, coords}) => {
             leftIcon={<Icon as={Ionicons} name="call" />}
             onPress={() => handleContact(phone)}
             flex={1}
-            isDisabled={!phone}>
+            isDisabled={!phone}
+          >
             Call
           </Button>
         </HStack>

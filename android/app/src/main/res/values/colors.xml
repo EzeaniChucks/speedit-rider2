@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Add this if it doesn't exist -->
+    <color name="teal_700">#00897B</color> <!-- Material Teal 700 -->
+    
+    <!-- Keep existing colors -->
+    <color name="teal_500">#008080</color> 
+</resources>

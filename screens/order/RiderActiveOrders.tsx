@@ -218,7 +218,7 @@ const RiderActiveOrders = () => {
     if (notificationCount === 0) {
       return (
         <Text style={styles.notification}>
-          No new orders available right now.
+          No new orders available in your location.
         </Text>
       );
     }
@@ -283,6 +283,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     textAlign: 'center',
     color: '#999',
+    padding: 10
   },
 
   topBar: {

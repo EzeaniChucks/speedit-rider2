@@ -107,7 +107,7 @@ export const registerUser = createAsyncThunk<
     let resultData;
     try {
       resultData = JSON.parse(resultText);
-      console.log('Parsed registration response:', resultData);
+      // console.log('Parsed registration response:', resultData);
     } catch (e) {
       // If parsing fails but response was not ok, use text as message
       if (!response.ok) {
@@ -261,9 +261,6 @@ export const logoutUser = createAsyncThunk(
       await Promise.all([
         AsyncStorage.removeItem(STORAGE_KEYS.USER_PROFILE),
         AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN),
-        // AsyncStorage.removeItem(STORAGE_KEYS.USER_HAS_ONBOARDED),
-        // AsyncStorage.removeItem(STORAGE_KEYS.USER_IS_RIDER),
-        // AsyncStorage.removeItem(STORAGE_KEYS.RIDER_ONBOARDING_STEP),
       ]);
       return true;
     } catch (error) {
@@ -287,6 +284,8 @@ interface AuthState {
   loading: 'idle' | 'pending'; // More specific loading state
   error: ApiErrorPayload | null; // For storing error messages/objects
   fcmToken: string | null; // Add this
+
+  isInitialized: boolean; // Add this
 }
 
 const initialRegistrationFormState: Omit<RegisterRiderData, 'password'> = {
@@ -309,6 +308,7 @@ const initialState: AuthState = {
   loading: 'idle',
   fcmToken: null, // Add this
   error: null,
+  isInitialized: false,
 };
 
 const authSlice = createSlice({
@@ -333,33 +333,23 @@ const authSlice = createSlice({
         };
       }
     },
-    // Used for loading persisted auth state or setting credentials from RTK query profile fetch
-    setAuthStateFromPersisted: (
-      state,
-      action: PayloadAction<{ token: string; user: RiderLoginResponse }>,
-    ) => {
-      state.token = action.payload.token;
-      state.user = action.payload.user;
-      state.isAuthenticated = true;
-      state.isProfileSetupComplete =
-        action.payload.user.verificationStatus === 'verified' ||
-        action.payload.user.verificationStatus === 'approved';
-      state.loading = 'idle';
-      state.error = null;
-    },
+    // // Used for loading persisted auth state or setting credentials from RTK query profile fetch
+    // setAuthStateFromPersisted: (
+    //   state,
+    //   action: PayloadAction<{ token: string; user: RiderLoginResponse }>,
+    // ) => {
+    //   state.token = action.payload.token;
+    //   state.user = action.payload.user;
+    //   state.isAuthenticated = true;
+    //   state.isProfileSetupComplete =
+    //     action.payload.user.verificationStatus === 'verified' ||
+    //     action.payload.user.verificationStatus === 'approved';
+    //   state.loading = 'idle';
+    //   state.error = null;
+    // },
     setFcmToken(state, action) {
       // New reducer
       state.fcmToken = action.payload;
-    },
-    logout: state => {
-      state.user = null;
-      state.token = null;
-      state.isAuthenticated = false;
-      state.isProfileSetupComplete = false;
-      state.loading = 'idle';
-      state.error = null;
-      state.isRegistered = false; // Reset registration flag
-      state.registrationForm = initialRegistrationFormState; // Clear form
     },
     resetAuthState: state => {
       state.loading = 'idle';
@@ -398,6 +388,7 @@ const authSlice = createSlice({
         state.isProfileSetupComplete =
           action.payload.user?.verificationStatus === 'verified' ||
           action.payload.user?.verificationStatus === 'approved';
+        state.isInitialized = true;
         state.loading = 'idle';
       })
       .addCase(initializeAuthFromStorage.rejected, state => {
@@ -488,6 +479,8 @@ const authSlice = createSlice({
         state.isProfileSetupComplete = false;
         state.loading = 'idle';
         state.error = null;
+        state.isRegistered = false; // Reset registration flag
+        state.registrationForm = initialRegistrationFormState; // Clear form
       })
       .addCase(logoutUser.rejected, (state, action) => {
         state.error = { data: action?.error?.message || '' };
@@ -514,8 +507,6 @@ const authSlice = createSlice({
 
 export const {
   updateRegistrationForm,
-  setAuthStateFromPersisted,
-  logout,
   resetAuthState,
   clearAuthError,
   resetRegistrationStatus,

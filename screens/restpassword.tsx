@@ -6,29 +6,31 @@ import StyledButton from '../components/StyledButton';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { ResetPasswordScreenProps } from '../nav.types';
 import { useConfirmPasswordResetMutation } from '../store/api';
-import { logout } from '../store/authSlice'; // To clear any temp password reset state
+import { logoutUser } from '../store/authSlice'; // To clear any temp password reset state
 import { colors } from '../theme/colors';
 import { globalStyles } from '../theme/style';
 import Card from '../components/Cards';
-import { RootState } from '../store';
+import { AppDispatch, RootState } from '../store';
 
-
-const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ navigation }) => {
+const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
+  navigation,
+}) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [resetPassword, { isLoading, error, isSuccess, data }] = useConfirmPasswordResetMutation();
-  const dispatch = useDispatch();
-  const resetCodeVerified = useSelector((state: RootState) => state.profile.resetCodeVerified);
-
+  const [resetPassword, { isLoading, error, isSuccess, data }] =
+    useConfirmPasswordResetMutation();
+  const dispatch = useDispatch<AppDispatch>();
+  const resetCodeVerified = useSelector(
+    (state: RootState) => state.profile.resetCodeVerified,
+  );
 
   useEffect(() => {
     if (!resetCodeVerified) {
-        Alert.alert("Error", "Please verify your OTP code first.");
-        // Potentially navigate back or to login if they somehow landed here without verification
-        navigation.navigate("Login");
+      Alert.alert('Error', 'Please verify your OTP code first.');
+      // Potentially navigate back or to login if they somehow landed here without verification
+      navigation.navigate('Login');
     }
   }, [resetCodeVerified, navigation]);
-
 
   const handleResetPassword = async () => {
     if (!newPassword || !confirmPassword) {
@@ -39,28 +41,33 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ navigation })
       Alert.alert('Error', 'Passwords do not match.');
       return;
     }
-    if (newPassword.length < 6) { // Example validation
-        Alert.alert('Error', 'Password must be at least 6 characters long.');
-        return;
+    if (newPassword.length < 6) {
+      // Example validation
+      Alert.alert('Error', 'Password must be at least 6 characters long.');
+      return;
     }
 
     try {
       await resetPassword({ newPassword }).unwrap();
       // Success handled by useEffect
     } catch (err) {
-      console.error("Password Reset failed:", err);
+      console.error('Password Reset failed:', err);
     }
   };
 
   useEffect(() => {
     if (isSuccess && data) {
-      Alert.alert('Success', data.message || 'Password reset successfully. Please login.');
-      dispatch(logout()); // Clear reset state and any old auth state
+      Alert.alert(
+        'Success',
+        data.message || 'Password reset successfully. Please login.',
+      );
+      dispatch(logoutUser()); // Clear reset state and any old auth state
       navigation.navigate('Login');
     }
   }, [isSuccess, data, navigation, dispatch]);
 
-  if (!resetCodeVerified) { // Prevent rendering if code not verified
+  if (!resetCodeVerified) {
+    // Prevent rendering if code not verified
     return null;
   }
 
@@ -69,7 +76,9 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ navigation })
       <LoadingOverlay visible={isLoading} text="Resetting Password..." />
       <Card>
         <Text style={globalStyles.title}>Set New Password</Text>
-        <Text style={globalStyles.subtitle}>Enter your new password below.</Text>
+        <Text style={globalStyles.subtitle}>
+          Enter your new password below.
+        </Text>
 
         {error && (
           <Text style={globalStyles.errorText}>
@@ -92,7 +101,11 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ navigation })
           placeholder="••••••••"
           secureTextEntry
         />
-        <StyledButton title="Reset Password" onPress={handleResetPassword} loading={isLoading} />
+        <StyledButton
+          title="Reset Password"
+          onPress={handleResetPassword}
+          loading={isLoading}
+        />
       </Card>
     </ScrollView>
   );

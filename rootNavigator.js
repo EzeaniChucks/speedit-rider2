@@ -2,15 +2,13 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from './screens/onboarding/LoginScreen';
-// import OrderListScreen from './screens/OrderHistoryScreen';
 import OrderDetailsScreen from './screens/order/OrderDetailsScreen';
 import SettingsScreen from './SettingsScreen';
-// import CreateAccount from './screens/onboarding/index'; // Adjust the path
+// import BecomeRiderScreen from './screens/onboarding/becomeRider';
+// import BecomeRiderTwoScreen from './screens/onboarding/becomeRiderStep_two';
 import BottomTabNavigator from './nav/index'; // Adjust the path
 import CreatePasswordScreen from './screens/onboarding/CreatePassword';
-import BecomeRiderScreen from './screens/onboarding/becomeRider';
 import BankCollectionScreen from './screens/onboarding/BankCollectionScreen';
-import BecomeRiderTwoScreen from './screens/onboarding/becomeRiderStep_two';
 import DocumentCollectionScreen from './screens/onboarding/setProfillePhoto';
 import DocumentUploadScreen from './screens/onboarding/Documentupload';
 import VehicleSelectionScreen from './screens/onboarding/VehicleSelectionScreen';
@@ -211,27 +209,6 @@ const RootNavigation = () => {
               <Stack.Group>
                 <Stack.Screen name="Onboarding" component={OnboardingScreen} />
                 <Stack.Screen name="Login" component={LoginScreen} />
-                {/* <Stack.Screen
-                  name="CreateAccountScreen"
-                  component={CreateAccount}
-                /> */}
-                <Stack.Screen
-                  name="RegisterPersonalInfo"
-                  component={RegistrationPersonalInformationScreen}
-                />
-                <Stack.Screen
-                  name="RegisterVehicleInfo"
-                  component={RegistrationVehicleInformationScreen}
-                />
-
-                <Stack.Screen
-                  name="AccountCreatedScreen"
-                  component={AccountCreatedScreen}
-                />
-                <Stack.Screen
-                  name="CreatePasswordScreen"
-                  component={CreatePasswordScreen}
-                />
 
                 {/* Password Reset Flow */}
                 <Stack.Screen
@@ -255,16 +232,35 @@ const RootNavigation = () => {
                   component={PasswordResetSuccessScreen}
                 />
               </Stack.Group>
+
               {/* Rider Onboarding Flow */}
               <Stack.Group>
                 <Stack.Screen
+                  name="RegisterPersonalInfo"
+                  component={RegistrationPersonalInformationScreen}
+                />
+                <Stack.Screen
+                  name="RegisterVehicleInfo"
+                  component={RegistrationVehicleInformationScreen}
+                />
+                <Stack.Screen
+                  name="CreatePasswordScreen"
+                  component={CreatePasswordScreen}
+                />
+                <Stack.Screen
+                  name="AccountCreatedScreen"
+                  component={AccountCreatedScreen}
+                />
+
+                {/* STALE COMPONENTS, BUT MIGHT STILL CONTAIN SOME USEFUL FEATURES FOR THE FUTURE */}
+                {/* <Stack.Screen
                   name="BecomeRiderScreen"
                   component={BecomeRiderScreen}
                 />
                 <Stack.Screen
                   name="BecomeRiderTwoScreen"
                   component={BecomeRiderTwoScreen}
-                />
+                /> */}
 
                 <Stack.Screen
                   name="DocumentCollectionScreen"

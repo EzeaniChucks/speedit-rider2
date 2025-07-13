@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert,Modal } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Modal,
+} from 'react-native';
 import Icons from '@react-native-vector-icons/ant-design';
-import { Box, CheckIcon, FlatList,  Select } from 'native-base';
+import { Box, CheckIcon, FlatList, Select } from 'native-base';
 
+
+// STALE COMPONENT, BUT MIGHT STILL CONTAIN SOME USEFUL FEATURES FOR THE FUTURE
 const BecomeRiderTwoScreen = ({ navigation }) => {
   const [city, setCity] = useState('');
 
@@ -17,64 +26,64 @@ const BecomeRiderTwoScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const cities = [
-    { label: "Lagos Mainland", value: "ux" },
-    { label: "Lekki", value: "web" },
-    { label: "Victoria Island", value: "cross" },
-    { label: "Oshodi/ Isolo", value: "ui" },
-    { label: "Backend Development", value: "backend" },
+    { label: 'Lagos Mainland', value: 'ux' },
+    { label: 'Lekki', value: 'web' },
+    { label: 'Victoria Island', value: 'cross' },
+    { label: 'Oshodi/ Isolo', value: 'ui' },
+    { label: 'Backend Development', value: 'backend' },
   ];
 
-  const handleCitySelect = (item) => {
+  const handleCitySelect = item => {
     setCity(item);
     setModalVisible(false);
   };
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Icons name="arrow-left" size={30} color='teal' />
+        <Icons name="arrow-left" size={30} color="teal" />
         <Text style={styles.title}>Become a rider</Text>
       </View>
       <View style={styles.content}>
-        <Text style={styles.subtitle}>Which city do you want to deliver in?</Text>
-        <TouchableOpacity
-        style={styles.selectButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.buttonText}>
-          {city ? city : "Choose City"}
+        <Text style={styles.subtitle}>
+          Which city do you want to deliver in?
         </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.selectButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.buttonText}>{city ? city : 'Choose City'}</Text>
+        </TouchableOpacity>
         <Box maxW="300">
-        <Modal
-        transparent={true}
-        animationType="slide"
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContainer}>
-            <FlatList
-              data={cities}
-              keyExtractor={(item) => item.value}
-              renderItem={({ item }) => (
+          <Modal
+            transparent={true}
+            animationType="slide"
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalBackground}>
+              <View style={styles.modalContainer}>
+                <FlatList
+                  data={cities}
+                  keyExtractor={item => item.value}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.cityItem}
+                      onPress={() => handleCitySelect(item.label)}
+                    >
+                      <Text style={styles.cityText}>{item.label}</Text>
+                      {city === item.label && <CheckIcon size="5" />}
+                    </TouchableOpacity>
+                  )}
+                />
                 <TouchableOpacity
-                  style={styles.cityItem}
-                  onPress={() => handleCitySelect(item.label)}
+                  style={styles.closeButton}
+                  onPress={() => setModalVisible(false)}
                 >
-                  <Text style={styles.cityText}>{item.label}</Text>
-                  {city === item.label && <CheckIcon size="5" />}
+                  <Text style={styles.closeButtonText}>Close</Text>
                 </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+              </View>
+            </View>
+          </Modal>
         </Box>
       </View>
       <TouchableOpacity style={styles.button} onPress={handleNext}>

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Alert,
@@ -9,16 +9,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 // Icon from 'react-native-vector-icons/FontAwesome6' is no longer needed for PaperTextInput's eye icon
-import {Box} from 'native-base';
+import { Box } from 'native-base';
 import AntIcons from '@react-native-vector-icons/ant-design';
-import {useDispatch, useSelector} from 'react-redux';
+// import AntIcons from '@react-native-vector-icons/AntIcons';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   registerUser,
   resetAuthState,
   clearAuthError,
 } from '../../store/authSlice'; // Adjust path
-import {TextInput as PaperTextInput} from 'react-native-paper'; // Import PaperTextInput
-import {AppDispatch} from '../../store';
+import { TextInput as PaperTextInput } from 'react-native-paper'; // Import PaperTextInput
+import { AppDispatch } from '../../store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ValidationResult {
@@ -32,7 +33,7 @@ interface ValidationResult {
   };
 }
 
-const CreatePasswordScreen = ({navigation}: {navigation: any}) => {
+const CreatePasswordScreen = ({ navigation }: { navigation: any }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [confirmPasswordMessage, setConfirmPasswordMessage] = useState('');
@@ -43,7 +44,7 @@ const CreatePasswordScreen = ({navigation}: {navigation: any}) => {
     useState<ValidationResult | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
-  const {registrationForm, loading, error, isRegistered} = useSelector(
+  const { registrationForm, loading, error, isRegistered } = useSelector(
     (state: any) => state.auth,
   );
 
@@ -148,10 +149,10 @@ const CreatePasswordScreen = ({navigation}: {navigation: any}) => {
     if (result.meta.requestStatus === 'fulfilled') {
       await AsyncStorage.setItem('@user_has_onboarded', 'true');
       // When starting rider onboarding
-      // await AsyncStorage.multiSet([
-      //   ['@user_is_rider', 'true'],
-      //   ['@rider_onboarding_step', 'basic_info']
-      // ]);
+      await AsyncStorage.multiSet([
+        ['@user_is_rider', 'true'],
+        ['@rider_onboarding_step', 'basic_info'],
+      ]);
 
       // After completing each step, update the progress
       // await AsyncStorage.setItem('@rider_onboarding_step', 'next_step_name');
@@ -195,16 +196,19 @@ const CreatePasswordScreen = ({navigation}: {navigation: any}) => {
   return (
     <ScrollView
       contentContainerStyle={styles.scrollContainer}
-      keyboardShouldPersistTaps="handled">
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.container}>
         <Box
           flexDirection="row"
           justifyContent="flex-start"
           alignItems="center"
-          marginBottom={20}>
+          marginBottom={20}
+        >
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={{padding: 5}}>
+            style={{ padding: 5 }}
+          >
             <AntIcons name="left-circle" size={30} color="teal" />
           </TouchableOpacity>
         </Box>
@@ -222,9 +226,14 @@ const CreatePasswordScreen = ({navigation}: {navigation: any}) => {
           activeOutlineColor={activeOutlineColor}
           right={
             <PaperTextInput.Icon
-              icon={isPasswordVisible ? 'eye-off' : 'eye'}
+              icon={() => (
+                <AntIcons
+                  name={isPasswordVisible ? 'eye-invisible' : 'eye'}
+                  size={20}
+                  color="gray"
+                />
+              )}
               onPress={togglePasswordVisibility}
-              color="gray"
             />
           }
         />
@@ -241,9 +250,14 @@ const CreatePasswordScreen = ({navigation}: {navigation: any}) => {
           activeOutlineColor={activeOutlineColor}
           right={
             <PaperTextInput.Icon
-              icon={isConfirmPasswordVisible ? 'eye-off' : 'eye'}
+              icon={() => (
+                <AntIcons
+                  name={isConfirmPasswordVisible ? 'eye-invisible' : 'eye'}
+                  size={20}
+                  color="gray"
+                />
+              )}
               onPress={toggleConfirmPasswordVisibility}
-              color="gray"
             />
           }
         />
@@ -259,7 +273,8 @@ const CreatePasswordScreen = ({navigation}: {navigation: any}) => {
                     ? 'red'
                     : 'green',
                 },
-              ]}>
+              ]}
+            >
               {confirmPasswordMessage}
             </Text>
           ) : null}
@@ -269,7 +284,8 @@ const CreatePasswordScreen = ({navigation}: {navigation: any}) => {
           flexDirection="column"
           justifyContent="space-between"
           marginBottom={20}
-          marginTop={10}>
+          marginTop={10}
+        >
           <Text style={styles.validationHeader}>Password must contain:</Text>
           <View style={styles.validationList}>
             <Text style={getValidationStyle(validationResult?.reasons.length)}>
@@ -299,7 +315,8 @@ const CreatePasswordScreen = ({navigation}: {navigation: any}) => {
             By continuing you agree to our{' '}
             <Text
               style={styles.link}
-              onPress={() => Alert.alert('Info', 'Navigate to Privacy Policy')}>
+              onPress={() => Alert.alert('Info', 'Navigate to Privacy Policy')}
+            >
               privacy policy
             </Text>{' '}
             and cookies.
@@ -314,7 +331,8 @@ const CreatePasswordScreen = ({navigation}: {navigation: any}) => {
                 styles.disabledButton,
             ]}
             onPress={handleCreateAccount}
-            disabled={!validationResult?.valid || password !== confirmPassword}>
+            disabled={!validationResult?.valid || password !== confirmPassword}
+          >
             {loading === 'pending' ? (
               <ActivityIndicator color="#fff" />
             ) : (

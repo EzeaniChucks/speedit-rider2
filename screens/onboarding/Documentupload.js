@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,14 @@ import {
   Alert,
 } from 'react-native';
 // import { Button } from 'react-native-paper'; // Using TouchableOpacity for consistency
-import {Box, Progress} from 'native-base';
+import { Box, Progress } from 'native-base';
 import Icons from '@react-native-vector-icons/ant-design';
-import {useDispatch, useSelector} from 'react-redux';
-import {setIdPhoto} from '../../store/verify';
+import { useDispatch, useSelector } from 'react-redux';
+import { setIdPhoto } from '../../store/verify';
 import UploadBottomSheet from './uploadSheet'; // Adjust path
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const DocumentUploadScreen = ({navigation}) => {
+const DocumentUploadScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const idPhotoUri = useSelector(state => state.verification.idPhotoUri);
 
@@ -30,7 +31,7 @@ const DocumentUploadScreen = ({navigation}) => {
     setSheetVisible(false);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!idPhotoUri) {
       Alert.alert('Missing Photo', 'Please upload your ID photo.');
       return;
@@ -38,6 +39,7 @@ const DocumentUploadScreen = ({navigation}) => {
     // console.log('ID Photo URI:', idPhotoUri);
 
     const nextProgress = Math.min(progress + 20, 100);
+    // await AsyncStorage.setItem('@rider_onboarding_step', 'basic_info');
     navigation.navigate('VehicleSelectionScreen', {
       currentProgress: nextProgress,
     });
@@ -47,7 +49,9 @@ const DocumentUploadScreen = ({navigation}) => {
     <View style={styles.container}>
       <Box safeAreaTop paddingX={4} paddingTop={4}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack() || navigation.navigate('Login')}
+          >
             <Icons name="left-circle" size={30} color="teal" />
           </TouchableOpacity>
           <Text style={styles.title}>Document collection</Text>
@@ -63,12 +67,13 @@ const DocumentUploadScreen = ({navigation}) => {
         </Text>
 
         {idPhotoUri && (
-          <Image source={{uri: idPhotoUri}} style={styles.imagePreview} />
+          <Image source={{ uri: idPhotoUri }} style={styles.imagePreview} />
         )}
 
         <TouchableOpacity
           style={styles.uploadButton}
-          onPress={() => setSheetVisible(true)}>
+          onPress={() => setSheetVisible(true)}
+        >
           <Text style={styles.buttonText}>
             {idPhotoUri ? 'Change ID Photo' : 'Upload ID Photo'}
           </Text>

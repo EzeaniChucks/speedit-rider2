@@ -21,7 +21,7 @@ interface RiderOnboardingStep {
 }
 
 const stepMap: Record<RiderOnboardingStep['step'], string> = {
-  basic_info: 'BecomeRiderScreen',
+  basic_info: 'DocumentUploadScreen',
   documents: 'DocumentCollectionScreen',
   vehicle: 'VehicleSelectionScreen',
   bank: 'BankCollectionScreen',
@@ -31,81 +31,68 @@ const stepMap: Record<RiderOnboardingStep['step'], string> = {
 const SplashScreen = ({ navigation }: { navigation: any }) => {
   const { colors } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
-  const { user, token, isAuthenticated, loading } = useSelector(
+  const { isInitialized, isAuthenticated, loading } = useSelector(
     (state: any) => state.auth,
   );
 
   // Initialize auth state from AsyncStorage
   useEffect(() => {
-    dispatch(initializeAuthFromStorage());
-  }, [dispatch]);
+    const init = async () => {
+      await dispatch(initializeAuthFromStorage());
 
-  const checkUserState = async () => {
-    try {
-      // Wait for auth initialization
-      if (loading === 'pending') return;
-
-      // Minimum display time for splash screen
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Check AsyncStorage for onboarding and rider status
       const [hasOnboarded, isRider, onboardingStep] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.USER_HAS_ONBOARDED),
         AsyncStorage.getItem(STORAGE_KEYS.USER_IS_RIDER),
         AsyncStorage.getItem(STORAGE_KEYS.RIDER_ONBOARDING_STEP),
       ]);
 
-      // Navigation logic
+      // important return statement line to hold splash until isinitialized is true
+      // prevents wrong navigation
+      if (!isInitialized || loading === 'pending') return;
+
+      // console.log(
+      //   'rider states',
+      //   hasOnboarded,
+      //   isAuthenticated,
+      //   isRider,
+      //   onboardingStep,
+      //   onboardingStep,
+      // );
+
       if (hasOnboarded !== 'true') {
         navigation.replace('Onboarding');
-      } else if (!user || !token) {
+      } else if (!isAuthenticated) {
         navigation.replace('Login');
       } else if (
-        isRider === 'true' &&
         onboardingStep &&
         onboardingStep !== 'completed'
       ) {
-        // Rider onboarding in progress
-        handleRiderOnboardingNavigation(
-          onboardingStep as RiderOnboardingStep['step'],
+        let step = onboardingStep as unknown;
+        navigation.replace(
+          stepMap[step as RiderOnboardingStep['step']] ||
+            'DocumentUploadScreen',
         );
       } else {
-        // Fully onboarded user
         navigation.replace('MainApp');
       }
-    } catch (error) {
-      console.error('Error checking user state:', error);
-      Alert.alert('Error', 'Failed to load user state. Please try again.');
-      navigation.replace('Login'); // Fallback to Login for auth-related issues
-    }
-  };
+    };
 
-  useEffect(() => {
-    if (loading !== 'pending') {
-      checkUserState();
-    }
-  }, [navigation, isAuthenticated, user, token, loading]);
-
-  const handleRiderOnboardingNavigation = (
-    step: RiderOnboardingStep['step'],
-  ) => {
-    const targetScreen = stepMap[step] || 'BecomeRiderScreen';
-    navigation.replace(targetScreen);
-  };
+    init();
+  }, [isInitialized]); // Only rerun when these change
 
   return (
-    <Box style={styles.container} bg="teal.500">
+    <Box style={styles.container} bg="teal.700">
       <View style={styles.content}>
         <Image
           source={require('../../assests/logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
-        <ActivityIndicator
+        {/* <ActivityIndicator
           size="small"
           color={colors.teal[200]}
           style={styles.loader}
-        />
+        /> */}
       </View>
     </Box>
   );

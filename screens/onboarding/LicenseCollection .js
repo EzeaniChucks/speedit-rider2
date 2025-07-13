@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import {Box, Progress} from 'native-base';
+import { Box, Progress } from 'native-base';
 import Icons from '@react-native-vector-icons/ant-design';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   setLicensePhoto,
   uploadDocumentsThunk,
@@ -19,50 +19,70 @@ import {
   clearAllPhotos,
 } from '../../store/verify';
 import UploadBottomSheet from './uploadSheet'; // Adjust path
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '../../util/storageKeys';
+import { logoutUser } from '../../store/authSlice';
 
-const LicenseCollectionScreen = ({route, navigation}) => {
-  const {currentProgress} = route.params || {currentProgress: 100}; // Default if last screen
+const LicenseCollectionScreen = ({ route, navigation }) => {
+  const { currentProgress } = route.params || { currentProgress: 100 }; // Default if last screen
   const dispatch = useDispatch();
 
   const licensePhotoUri = useSelector(
     state => state.verification.licensePhotoUri,
   );
-  const {uploadStatus, uploadError, uploadResponse} = useSelector(
+  const user = useSelector(state => state.auth.user);
+  const { uploadStatus, uploadError, uploadResponse } = useSelector(
     state => state.verification,
   );
-  const {verificationStatus, verificationData, verificationError} = useSelector(
-    state => state.verification,
-  );
+  const { verificationStatus, verificationData, verificationError } =
+    useSelector(state => state.verification);
 
   const [progressValue, setProgressValue] = useState(currentProgress);
   const [isSheetVisible, setSheetVisible] = useState(false);
 
   useEffect(() => {
-    // Handle successful upload
-    if (uploadStatus === 'succeeded') {
-      Alert.alert('Success', 'Documents uploaded successfully!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Optionally fetch verification status now
-            // dispatch(fetchVerificationStatusThunk());
-            dispatch(resetUploadState());
-            dispatch(clearAllPhotos()); // Clear photos from redux
-            navigation.navigate('MainApp', {screen: 'Home'}); // Or a success/status screen
+    const postDocumentUpload = async () => {
+      // Handle successful upload
+      if (uploadStatus === 'succeeded') {
+        setProgressValue(100);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.RIDER_ONBOARDING_STEP,
+          'completed',
+        );
+        dispatch(resetUploadState());
+        dispatch(clearAllPhotos()); // Clear photos from redux
+        
+        //if you are navigating to login, clear all auth states, else comment this out
+        // dispatch(logoutUser());
+        
+        // But if you are navigating to home instead of login (else comment this out)
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.USER_PROFILE,
+          JSON.stringify({ ...user, verificationStatus: 'verified' }),
+        );
+        Alert.alert('Success', 'Documents uploaded successfully!', [
+          {
+            text: 'OK',
+            onPress: async () => {
+              navigation.navigate('MainApp', { screen: 'Home' });
+
+              // navigation.navigate('Login');
+            },
           },
-        },
-      ]);
-    }
-    // Handle failed upload
-    if (uploadStatus === 'failed') {
-      const errorMessage =
-        uploadError?.message ||
-        JSON.stringify(uploadError) ||
-        'An unknown error occurred during upload.';
-      Alert.alert('Upload Failed', errorMessage, [
-        {text: 'OK', onPress: () => dispatch(resetUploadState())},
-      ]);
-    }
+        ]);
+      }
+      // Handle failed upload
+      if (uploadStatus === 'failed') {
+        const errorMessage =
+          uploadError?.message ||
+          JSON.stringify(uploadError) ||
+          'An unknown error occurred during upload.';
+        Alert.alert('Upload Failed', errorMessage, [
+          { text: 'OK', onPress: () => dispatch(resetUploadState()) },
+        ]);
+      }
+    };
+    postDocumentUpload();
   }, [uploadStatus, uploadResponse, uploadError, dispatch, navigation]);
 
   // Optionally, handle verification status changes
@@ -124,12 +144,16 @@ const LicenseCollectionScreen = ({route, navigation}) => {
         </Text>
 
         {licensePhotoUri && (
-          <Image source={{uri: licensePhotoUri}} style={styles.imagePreview} />
+          <Image
+            source={{ uri: licensePhotoUri }}
+            style={styles.imagePreview}
+          />
         )}
 
         <TouchableOpacity
           style={styles.uploadButton}
-          onPress={() => setSheetVisible(true)}>
+          onPress={() => setSheetVisible(true)}
+        >
           <Text style={styles.buttonText}>
             {licensePhotoUri ? 'Change License Photo' : 'Upload License Photo'}
           </Text>
@@ -141,7 +165,8 @@ const LicenseCollectionScreen = ({route, navigation}) => {
       ) : (
         <TouchableOpacity
           style={styles.submitButton}
-          onPress={handleUploadDocuments}>
+          onPress={handleUploadDocuments}
+        >
           <Text style={styles.buttonText}>Submit All Documents</Text>
         </TouchableOpacity>
       )}

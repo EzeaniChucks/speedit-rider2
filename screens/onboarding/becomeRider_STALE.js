@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Icons from '@react-native-vector-icons/ant-design';
 
-
+// STALE COMPONENT, BUT MIGHT STILL CONTAIN SOME USEFUL FEATURES FOR THE FUTURE
 const BecomeRiderScreen = ({ navigation }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');

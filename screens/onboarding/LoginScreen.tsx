@@ -18,7 +18,6 @@ import {
   loginUser,
   clearAuthError,
   resetAuthState,
-  setAuthStateFromPersisted,
   initializeAuthFromStorage,
 } from '../../store/authSlice';
 import { TextInput } from 'react-native-paper';
@@ -49,37 +48,86 @@ const SignInScreen = ({ navigation }: any) => {
   // }, [navigation, dispatch]);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const isProfileComplete =
-        user.verificationStatus === 'verified' ||
-        user.verificationStatus === 'approved';
+    const handlePostLogin = async () => {
+      console.log(isAuthenticated, user, token);
+      if (!isAuthenticated || !user || !token) {
+        return;
+      }
 
-      const saveToStorage = async () => {
-        try {
-          await Promise.all([
-            AsyncStorage.setItem(STORAGE_KEYS.USER_HAS_ONBOARDED, 'true'),
-            AsyncStorage.setItem(STORAGE_KEYS.USER_IS_RIDER, 'true'),
-            AsyncStorage.setItem(
-              STORAGE_KEYS.USER_PROFILE,
-              JSON.stringify(user),
-            ),
-            AsyncStorage.setItem(
-              STORAGE_KEYS.AUTH_TOKEN,
-              JSON.stringify(token),
-            ), // Token is a string
-          ]);
-          navigation.replace(
-            isProfileComplete ? 'MainApp' : 'DocumentUploadScreen',
-          );
-        } catch (err) {
-          console.error('Failed to save to AsyncStorage:', err);
-          Alert.alert('Error', 'Failed to save user data. Please try again.');
+      try {
+        const isProfileComplete = ['verified', 'approved'].includes(
+          user.verificationStatus,
+        );
+
+        // Parallelize all storage operations
+        await Promise.all([
+          AsyncStorage.setItem(STORAGE_KEYS.USER_HAS_ONBOARDED, 'true'),
+          AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(user)),
+          AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, JSON.stringify(token)),
+          !isProfileComplete
+            ? AsyncStorage.setItem(
+                STORAGE_KEYS.RIDER_ONBOARDING_STEP,
+                'basic_info', // Set initial step if needed
+              )
+            : Promise.resolve(),
+        ]);
+
+        // Determine navigation destination
+        let targetScreen = 'MainApp';
+        if (!isProfileComplete) {
+          targetScreen = 'DocumentUploadScreen';
         }
-      };
 
-      saveToStorage();
-    }
-  }, [isAuthenticated, user, token, navigation]);
+        navigation.replace(targetScreen);
+      } catch (err) {
+        console.error('Post-login storage error:', err);
+        Alert.alert(
+          'Storage Error',
+          "Your login was successful but we couldn't save your session. Please restart the app.",
+        );
+        // Fallback to safe screen
+        navigation.replace('MainApp');
+      }
+    };
+
+    handlePostLogin();
+
+    // if (isAuthenticated && user) {
+    //   // console.log(user)
+    //   const isProfileComplete =
+    //     user.verificationStatus === 'verified' ||
+    //     user.verificationStatus === 'approved';
+
+    //   const saveToStorage = async () => {
+    //     try {
+    //       await Promise.all([
+    //         AsyncStorage.setItem(STORAGE_KEYS.USER_HAS_ONBOARDED, 'true'),
+    //         AsyncStorage.setItem(STORAGE_KEYS.USER_IS_RIDER, 'true'),
+    //         AsyncStorage.setItem(
+    //           STORAGE_KEYS.USER_PROFILE,
+    //           JSON.stringify(user),
+    //         ),
+    //         AsyncStorage.setItem(
+    //           STORAGE_KEYS.AUTH_TOKEN,
+    //           JSON.stringify(token),
+    //         ),
+    //         AsyncStorage.setItem(
+    //           STORAGE_KEYS.RIDER_ONBOARDING_STEP,
+    //           'basic_info',
+    //         ),
+    //       ]);
+    //       navigation.replace(
+    //         isProfileComplete ? 'MainApp' : 'DocumentUploadScreen',
+    //       );
+    //     } catch (err) {
+    //       console.error('Failed to save to AsyncStorage:', err);
+    //       Alert.alert('Error', 'Failed to save user data. Please try again.');
+    //     }
+    //   };
+
+    //   saveToStorage();
+    // }
+  }, [isAuthenticated, user, token]);
 
   useEffect(() => {
     if (error) {
